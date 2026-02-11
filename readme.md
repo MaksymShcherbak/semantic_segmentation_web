@@ -1,5 +1,7 @@
 # Semantic Segmentation 🧩
 
+_This is a repository for the Web App. If you're looking for the Jupyter Notebook, check out [https://github.com/MaksymShcherbak/semantic_segmentation_train](https://github.com/MaksymShcherbak/semantic_segmentation_train)_.
+
 ![example1](example1.png)
 
 This application allows exploring various approaches to the design of semantic segmentation neural networks.
@@ -12,10 +14,10 @@ This was my **Master's Degree** project at university.
 
 ## What is Semantic Segmentation?
 
-Semantic Segmentation is a **computer vision task** in which a model assigns a class label to **every individual pixel** of an image (for example: sky, road, person, or vehicle).  
-Unlike traditional image classification, where a single label describes the whole image, semantic segmentation produces a **pixel-level understanding** of the scene.
-
-This detailed spatial information makes the method especially important in areas such as **autonomous driving**, **robotics**, **medical imaging**, and other systems that must interpret complex environments with high precision.
+> Semantic Segmentation is a **computer vision task** in which a model assigns a class label to **every individual pixel** of an image (for example: sky, road, person, or vehicle).  
+> Unlike traditional image classification, where a single label describes the whole image, semantic segmentation produces a **pixel-level understanding** of the scene.
+>
+> This detailed spatial information makes the method especially important in areas such as **autonomous driving**, **robotics**, **medical imaging**, and other systems that must interpret complex environments with high precision.
 
 ## Tech Stack
 
@@ -54,15 +56,11 @@ setx PYTHONNOUSERSITE 1
 
 The models come pre-trained, so this step is completely optional.
 
-If you want to train the models yourself, execute notebooks in the following order (using [Google Colab](https://colab.research.google.com/) is recommended):
-
-1. `generate-weights.ipynb`
-2. `semantic_segmentation.ipynb`
+If you want to do this, check out the [Jupyter Notebook](https://github.com/MaksymShcherbak/semantic_segmentation_train).
 
 ## Running the Application
 
 ```bat
-cd web
 python index.py
 ```
 
