@@ -17,3 +17,4 @@ dependencies:
       - opencv-python==4.12.0.88
       - pillow==10.1.0
       - emnist
+      - gunicorn==25.0.3
