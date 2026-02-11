@@ -1,0 +1,209 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Segmentation Prediction</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caesar+Dressing&family=Inter:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{{ url_for('static', filename='favicon.ico')}}"
+    />
+  </head>
+  <body>
+    <header>
+      <h2 class="gradient-text">Semantic Segmentation</h2>
+      <h3 class="author">
+        Made by
+        <a
+          class="author-link"
+          href="https://github.com/MaksymShcherbak"
+          target="_blank"
+          >Shcherbak Maksym</a
+        >
+      </h3>
+    </header>
+    <div class="container">
+      <div class="intro">
+        <div class="intro-content">
+          <div class="intro-main">
+            <h3>What's Semantic Segmentation?</h3>
+            <p>
+              It's a computer vision task. The model has to
+              <b>label every single pixel</b> in an image with a class (e.g.
+              Sky, Human, Car).
+            </p>
+            <p>
+              It's a #1 use in <b>autonomous driving</b>: drones and automobiles
+              that adapt to the current environment. Semantic Segmentation is
+              used in other fields as well.
+            </p>
+            <h3>What's this website?</h3>
+            <p>
+              It's a showcase of the Semantic Segmentation neural networks I've
+              built for my master's degree project.
+            </p>
+            <p>
+              They're not that advanced, but they might help you grasp the main
+              concepts of this ML task.
+            </p>
+            <p>
+              It should also be useful for
+              <b>comparing different approaches</b> to neural networks.
+            </p>
+            <h3>
+              Try it out by using the field below, or choose one of the examples
+              in the gallery!
+            </h3>
+            <div class="drop-zone">
+              <img src="{{ url_for('static', filename='img.svg') }}" />
+              Drag & Drop Your Image
+              <input
+                type="file"
+                name="image"
+                id="image"
+                accept="image/*"
+                required
+                style="display: none"
+              />
+            </div>
+          </div>
+          <div class="intro-side">
+            <img src="{{ url_for('static', filename='cover.png') }}" />
+          </div>
+        </div>
+        <div class="gallery">
+          <h1>Examples Gallery</h1>
+          <div class="gallery-images" id="gallery-images"></div>
+        </div>
+      </div>
+
+      <div class="spinner" id="spinner" style="display: none">
+        <img src="{{ url_for('static', filename='spinner.svg') }}" />
+        <h2>The models are analyzing your image.</h2>
+        <h3>This may take a while.</h3>
+      </div>
+
+      <div class="results" id="results" style="display: none">
+        <h2>Prediction Results</h2>
+
+        <div class="options">
+          <label for="overlay" class="options-item">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              name="overlay"
+              id="overlay"
+              value="1"
+            />
+            <span>Overlay Transparency</span>
+          </label>
+        </div>
+
+        <div class="result-container" id="result-container">
+          <div class="original">
+            <div class="canvas">
+              <canvas id="original-canvas"></canvas>
+            </div>
+            <h2>Original</h2>
+          </div>
+
+          {% for model_name in models %}
+          <div class="model-result">
+            <div class="canvas">
+              <canvas id="original-canvas-{{ model_name }}"></canvas>
+              <canvas id="mask-canvas-{{ model_name }}"></canvas>
+            </div>
+            <h2>
+              Prediction Mask for <span class="modelname">{{model_name}}</span>
+            </h2>
+            <button id="details-{{ model_name }}">Details</button>
+          </div>
+          {% endfor %}
+        </div>
+        <div id="class-legend" class="class-legend"></div>
+        <h1 class="retry" id="retry">→ Try Another Image</h1>
+      </div>
+    </div>
+
+    <div class="modal" id="modal" style="display: none">
+      <div class="modal-header">
+        <div class="modal-tabs">
+          <div class="tab" id="overview-tab">Overview</div>
+          <div class="tab" id="stats-tab">Stats</div>
+          <div class="tab" id="comparison-tab">Comparison</div>
+        </div>
+        <div class="modal-meta">
+          <div class="modal-name" id="modal-name"></div>
+          <div class="modal-close" id="modal-close">&times;</div>
+        </div>
+      </div>
+      <div class="modal-content" id="modal-content"></div>
+    </div>
+
+    <div class="footer">
+      <span>
+        Built using the
+        <a
+          href="https://github.com/ishann/aeroscapes"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Aeroscapes</a
+        >
+        dataset. Project source code at
+        <a
+          href="https://github.com/MaksymShcherbak/semantic_segmentation"
+          target="_blank"
+          rel="noopener noreferrer"
+          >GitHub</a
+        >. If you liked it, you can find me at:</span
+      >
+      <div>
+        <a
+          class="author-link"
+          href="https://github.com/MaksymShcherbak"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            src="{{ url_for('static', filename='github.svg') }}"
+            alt="GitHub Logo"
+          />
+          GitHub
+        </a>
+      </div>
+
+      <div>
+        <a
+          class="author-link"
+          href="https://www.linkedin.com/in/maksym-shcherbak-11159b3a7/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            src="{{ url_for('static', filename='linkedin.svg') }}"
+            alt="LinkedIn Logo"
+          />
+          LinkedIn
+        </a>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+      const model_names = {{ models | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='predict.js') }}"></script>
+  </body>
+</html>

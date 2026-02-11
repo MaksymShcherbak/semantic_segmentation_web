@@ -1,0 +1,112 @@
+{
+  "TARGET_SIZE": [360, 640],
+  "CLASSES": [
+    {
+      "name": "Background",
+      "color": "#000000",
+      "weight": 0.09475566446781158
+    },
+    {
+      "name": "Person",
+      "color": "#c08080",
+      "weight": 0.7136350274085999
+    },
+    {
+      "name": "Bike",
+      "color": "#008001",
+      "weight": 1.970465898513794
+    },
+    {
+      "name": "Car",
+      "color": "#808080",
+      "weight": 0.7447360157966614
+    },
+    {
+      "name": "Drone",
+      "color": "#800000",
+      "weight": 2.6571462154388428
+    },
+    {
+      "name": "Boat",
+      "color": "#010080",
+      "weight": 3.0724258422851562
+    },
+    {
+      "name": "Animal",
+      "color": "#c10082",
+      "weight": 1.5611056089401245
+    },
+    {
+      "name": "Obstacle",
+      "color": "#bf0000",
+      "weight": 0.6022815108299255
+    },
+    {
+      "name": "Construction",
+      "color": "#c08100",
+      "weight": 0.21431663632392883
+    },
+    {
+      "name": "Vegetation",
+      "color": "#004001",
+      "weight": 0.07421457022428513
+    },
+    {
+      "name": "Road",
+      "color": "#7f8000",
+      "weight": 0.08355341851711273
+    },
+    {
+      "name": "Sky",
+      "color": "#008081",
+      "weight": 0.21136368811130524
+    }
+  ],
+  "MODELS": {
+    "random": {
+      "full_name": "random_segmentation_model",
+      "description": {
+        "name": "Random Choice",
+        "summary": "The Random model assigns each pixel to a random class.\n\nIt doesn't do any training, and serves primarily as a baseline for other models.",
+        "performance": "The Random model achieves extremely low performance because of random assignment.\n\nWhile trivial, it helps contextualize the value of more advanced architectures.",
+        "comparison": "Mean IoU (~0.024) is far below all other tested models."
+      }
+    },
+    "dense": {
+      "full_name": "dense_segmentation_model",
+      "description": {
+        "name": "Dense Neural Network",
+        "summary": "The Dense model uses only Dense layers, which helps to capture some global patterns in the data.\n\nDense layers are able to process pixel-level classifications, but they are quite limited at that task.\n\nWe have to use the downscaling layer to reduce the dimensions, otherwise we'd end up with a huge model (>2GB).",
+        "performance": "The Dense model achieves moderate performance.\n\nIt indicates some learning of global structures, but is not able to capture fine spatial features.\n\nPer-class performance varies widely, with sky and vegetation classes dominating, highlighting biases toward larger, more uniform regions.",
+        "comparison": "Outperforms random choice by a wide margin (Mean IoU ~0.24).\n\nHowever, CNN, U-Net, and MobileNetV2 achieve substantially higher, reflecting the importance of convolutions in semantic segmentation (and the limitations of using dense layers alone)."
+      }
+    },
+    "cnn": {
+      "full_name": "cnn_segmentation_model",
+      "description": {
+        "name": "Convolutional Neural Network",
+        "summary": "The CNN model uses convolutional filters to exploit local spatial correlations, capturing edges, textures, and object boundaries.\n\nThe spatial resolution leads to better segmentation compared to purely dense approaches.",
+        "performance": "The CNN model achieves moderate performance.\n\nThe accuracy reflects improved classification of smaller classes, but performance varies for tiny objects like drones and bikes, which remain very challenging for the model.",
+        "comparison": "IoU is higher than Dense (~0.213), but lower than more advanced models.\n\nCNNs capture local structure better, but lack some architectural choices that could lead to better performance."
+      }
+    },
+    "unet": {
+      "full_name": "unet_segmentation_model",
+      "description": {
+        "name": "U-Net Neural Network",
+        "summary": "U-Net is a specialized neural network for segmentation that has two main parts: an encoder and a decoder.\n\nThe encoder gradually reduces image resolution to capture high-level context, while the decoder restores spatial details to produce pixel-level predictions.\n\nSkip connections directly link corresponding layers in the encoder and decoder, preserving fine-grained features and improving segmentation of small or complex objects.",
+        "performance": "Class-wise performance of the U-Net model is good. It is particularly effective at retaining fine details.\n\nPrecision and recall improve for both uniform (Sky, Vegetation) and smaller classes (Bike, Person).",
+        "comparison": "Outperforms Dense and CNN (Mean IoU ~0.31).\n\nWhile MobileNetV2 remains superior, U-Net demonstrates how architectural design leveraging skip connections improves fine-grained segmentation."
+      }
+    },
+    "mobilenetv2": {
+      "full_name": "mobilenetv2_segmentation_model",
+      "description": {
+        "name": "MobileNetV2-based Neural Network",
+        "summary": "This architecture uses the pre-trained MobileNetV2 model as the encoder. MobileNet is a lightweight architecture using depthwise separable convolutions and inverted residual blocks.\n\nDesigned for computational efficiency while maintaining high segmentation accuracy.",
+        "performance": "MobileNetV2 model excels across various metrics in the test/validation datasets.\n\nCombines speed with high fidelity in both large uniform regions (Sky, Road, Vegetation) and smaller objects (Person, Drone, Bike), achieving robust performance.",
+        "comparison": "Dominates all other models in mean IoU by a wide margin (~0.7).\n\nThe performance of this model is relatively close to state-of-the-art models in this field."
+      }
+    }
+  }
+}
