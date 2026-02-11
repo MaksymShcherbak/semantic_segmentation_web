@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify, send_file
 import tensorflow as tf
+from tensorflow.keras import backend as K
 tf.config.run_functions_eagerly(False)
+
 
 import numpy as np
 from PIL import Image
@@ -86,7 +88,7 @@ def run_segmentation(image_bytes, full_model_name):
 
         # Predict
         pred_start = time.time()
-        prediction = model(image, training=False).numpy()[0]
+        prediction = model(image, training=False).numpy().astype(np.float16)[0]
         print(f"[INFO] Prediction for {full_model_name} took {time.time() - pred_start:.2f}s")
 
         pred_classes = prediction.argmax(axis=-1).astype(np.uint8)
@@ -98,6 +100,8 @@ def run_segmentation(image_bytes, full_model_name):
         mask_pil.save(mask_buf, format="PNG")
         mask_buf.seek(0)
         mask_png_bytes = mask_buf.getvalue()
+
+        K.clear_session()
 
         # Compute legend
         results = load_results(full_model_name)["stats"]
