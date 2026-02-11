@@ -13,5 +13,5 @@ app.register_blueprint(api_bp, url_prefix="/api")
 app.register_blueprint(web_bp, url_prefix="/")
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 3100))
+    port = int(os.environ.get("PORT", 3000))
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
