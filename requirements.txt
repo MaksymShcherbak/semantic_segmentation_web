@@ -6,3 +6,4 @@ opencv-python==4.12.0.88
 pandas
 scikit-learn
 gunicorn==25.0.3
+psutil
