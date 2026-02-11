@@ -21,9 +21,8 @@ MODELS = config["MODELS"]
 MODEL_DIR = "./models"
 
 model_results_cache = {}
-loaded_models = {}  # All models loaded at startup
+loaded_models = {}
 
-# Load model results
 def load_results(full_model_name):
     if full_model_name in model_results_cache:
         return model_results_cache[full_model_name]
@@ -38,7 +37,6 @@ def load_results(full_model_name):
     print(f"[INFO] Loaded results for {full_model_name}")
     return results
 
-# Load all models at startup
 def load_all_models():
     for short_name, model_data in MODELS.items():
         full_model_name = model_data["full_name"]
@@ -63,14 +61,12 @@ def load_all_models():
         loaded_models[full_model_name] = model
         print(f"[INFO] Model {full_model_name} loaded in {time.time() - start_time:.2f}s")
 
-# Run segmentation using already-loaded model
 def run_segmentation(image_bytes, full_model_name):
     start_time = time.time()
     try:
         import psutil, os
         process = psutil.Process(os.getpid())
 
-        # Decode and resize image
         with Image.open(io.BytesIO(image_bytes)) as pil:
             pil_resized = pil.convert("RGB").resize((TARGET_SIZE[1], TARGET_SIZE[0]))
             orig_buf = io.BytesIO()
@@ -78,24 +74,20 @@ def run_segmentation(image_bytes, full_model_name):
             orig_buf.seek(0)
             orig_png_bytes = orig_buf.getvalue()
 
-        # Convert to tensor
         image_array = np.array(pil_resized, dtype=np.float16) / 255.0
         image_tensor = tf.convert_to_tensor(image_array)[None, ...]
 
         print(f"[MEM] Before prediction: {process.memory_info().rss / 1024**2:.2f} MB")
 
-        # Get preloaded model
         model = loaded_models.get(full_model_name)
         if model is None:
             raise RuntimeError(f"Model not loaded: {full_model_name}")
 
-        # Predict
         pred_start = time.time()
         prediction = model(image_tensor, training=False).numpy()
         print(f"[INFO] Prediction for {full_model_name} took {time.time() - pred_start:.2f}s")
         pred_classes = prediction[0].argmax(axis=-1).astype(np.uint8)
 
-        # Create colored mask
         palette = np.array(util.get_pallette(config["CLASSES"]), dtype=np.uint8)
         colored_mask = palette[pred_classes]
         mask_pil = Image.fromarray(colored_mask)
@@ -104,7 +96,6 @@ def run_segmentation(image_bytes, full_model_name):
         mask_buf.seek(0)
         mask_png_bytes = mask_buf.getvalue()
 
-        # Compute legend
         results = load_results(full_model_name)["stats"]
         total_pixels = pred_classes.size
         mean_iou = float(np.mean([c["iou"] for c in results["per_class"]]))
@@ -120,7 +111,6 @@ def run_segmentation(image_bytes, full_model_name):
             })
         legend_json_str = json.dumps(legend, indent=2)
 
-        # Free temporary arrays
         del image_array, image_tensor, prediction, pred_classes, colored_mask, mask_pil, pil_resized
         import gc
         gc.collect()
@@ -172,6 +162,9 @@ def predict_all():
         print(f"[ERROR] /predict_all failed after {time.time() - request_start:.2f}s")
         traceback.print_exc()
         return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
+    finally:
+        import gc
+        model_results_cache.clear()
+        gc.collect()
 
-# Load all models immediately on startup
 load_all_models()
