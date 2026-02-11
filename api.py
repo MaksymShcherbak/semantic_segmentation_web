@@ -3,7 +3,6 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 tf.config.run_functions_eagerly(False)
 
-
 import numpy as np
 from PIL import Image
 import io
@@ -22,8 +21,9 @@ MODELS = config["MODELS"]
 MODEL_DIR = "./models"
 
 model_results_cache = {}
-loaded_models = {}  # Lazy-loaded models
+loaded_models = {}  # All models loaded at startup
 
+# Load model results
 def load_results(full_model_name):
     if full_model_name in model_results_cache:
         return model_results_cache[full_model_name]
@@ -38,39 +38,39 @@ def load_results(full_model_name):
     print(f"[INFO] Loaded results for {full_model_name}")
     return results
 
-def load_model(full_model_name):
-    if full_model_name in loaded_models:
-        return loaded_models[full_model_name]
+# Load all models at startup
+def load_all_models():
+    for short_name, model_data in MODELS.items():
+        full_model_name = model_data["full_name"]
+        keras_path = os.path.join(MODEL_DIR, f"{full_model_name}.keras")
+        if not os.path.exists(keras_path):
+            print(f"[WARN] Model not found: {full_model_name}")
+            continue
 
-    keras_path = os.path.join(MODEL_DIR, f"{full_model_name}.keras")
-    if not os.path.exists(keras_path):
-        print(f"[WARN] Model not found: {full_model_name}")
-        return None
+        print(f"[INFO] Loading model: {full_model_name} ...")
+        start_time = time.time()
+        model = tf.keras.models.load_model(
+            keras_path,
+            custom_objects={
+                "WeightedLoss": util.WeightedLoss,
+                "WeightedAccuracy": util.WeightedAccuracy,
+                "NormalAccuracy": util.NormalAccuracy,
+                "RandomSegmentation": util.RandomSegmentation,
+                "ResizeLike": util.ResizeLike
+            },
+            compile=False
+        )
+        loaded_models[full_model_name] = model
+        print(f"[INFO] Model {full_model_name} loaded in {time.time() - start_time:.2f}s")
 
-    print(f"[INFO] Loading model: {full_model_name} ...")
-    start_time = time.time()
-    model = tf.keras.models.load_model(
-        keras_path,
-        custom_objects={
-            "WeightedLoss": util.WeightedLoss,
-            "WeightedAccuracy": util.WeightedAccuracy,
-            "NormalAccuracy": util.NormalAccuracy,
-            "RandomSegmentation": util.RandomSegmentation,
-            "ResizeLike": util.ResizeLike
-        },
-        safe_mode=False
-    )
-    loaded_models[full_model_name] = model
-    print(f"[INFO] Model {full_model_name} loaded in {time.time() - start_time:.2f}s")
-    return model
-
+# Run segmentation using already-loaded model
 def run_segmentation(image_bytes, full_model_name):
     start_time = time.time()
     try:
         import psutil, os
         process = psutil.Process(os.getpid())
 
-        # Decode and resize once using PIL
+        # Decode and resize image
         with Image.open(io.BytesIO(image_bytes)) as pil:
             pil_resized = pil.convert("RGB").resize((TARGET_SIZE[1], TARGET_SIZE[0]))
             orig_buf = io.BytesIO()
@@ -78,14 +78,14 @@ def run_segmentation(image_bytes, full_model_name):
             orig_buf.seek(0)
             orig_png_bytes = orig_buf.getvalue()
 
-        # Convert PIL to float16 numpy array to tensor
+        # Convert to tensor
         image_array = np.array(pil_resized, dtype=np.float16) / 255.0
-        image_tensor = tf.convert_to_tensor(image_array)[None, ...]  # batch dimension
+        image_tensor = tf.convert_to_tensor(image_array)[None, ...]
 
         print(f"[MEM] Before prediction: {process.memory_info().rss / 1024**2:.2f} MB")
 
-        # Load model lazily
-        model = load_model(full_model_name)
+        # Get preloaded model
+        model = loaded_models.get(full_model_name)
         if model is None:
             raise RuntimeError(f"Model not loaded: {full_model_name}")
 
@@ -120,21 +120,15 @@ def run_segmentation(image_bytes, full_model_name):
             })
         legend_json_str = json.dumps(legend, indent=2)
 
-        # Clear large arrays to reduce memory
+        # Free temporary arrays
         del image_array, image_tensor, prediction, pred_classes, colored_mask, mask_pil, pil_resized
         import gc
         gc.collect()
-        K.clear_session()
 
         print(f"[MEM] After cleanup: {process.memory_info().rss / 1024**2:.2f} MB")
         print(f"[INFO] run_segmentation {full_model_name} done in {time.time() - start_time:.2f}s")
 
         return orig_png_bytes, mask_png_bytes, legend_json_str
-
-    except Exception:
-        print(f"[ERROR] run_segmentation failed for {full_model_name}")
-        traceback.print_exc()
-        raise
 
     except Exception:
         print(f"[ERROR] run_segmentation failed for {full_model_name}")
@@ -178,3 +172,6 @@ def predict_all():
         print(f"[ERROR] /predict_all failed after {time.time() - request_start:.2f}s")
         traceback.print_exc()
         return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
+
+# Load all models immediately on startup
+load_all_models()
